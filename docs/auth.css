@@ -1,0 +1,357 @@
+/* =========================================================
+   auth.css — Login & Register page styles
+   Themes applied via data-theme on <html> (see theme.js)
+   ========================================================= */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Theme tokens (mirrors style.css) ──────────────────── */
+:root,
+[data-theme="dark"] {
+  --bg:      #0f1117;
+  --surface: #1a1d27;
+  --surface2: #20242f;
+  --border:  #2d3142;
+  --text:    #e0e6f0;
+  --muted:   #7f8ea3;
+  --accent:  #3d8ef8;
+  --green:   #27ae60;
+  --red:     #e74c3c;
+  --orange:  #e67e22;
+  --radius:  12px;
+  --shadow:  0 8px 40px rgba(0,0,0,0.5);
+  --grad-a:  #3d8ef8;
+  --grad-b:  #2ecc71;
+  --input-bg: #131520;
+  --placeholder: #3d4460;
+}
+
+[data-theme="light"] {
+  --bg:      #f0f2f7;
+  --surface: #ffffff;
+  --surface2: #e8ecf4;
+  --border:  #cdd3e0;
+  --text:    #1a1d2e;
+  --muted:   #6b7280;
+  --accent:  #2563eb;
+  --green:   #16a34a;
+  --red:     #dc2626;
+  --orange:  #ea580c;
+  --radius:  12px;
+  --shadow:  0 8px 40px rgba(0,0,0,0.12);
+  --grad-a:  #2563eb;
+  --grad-b:  #16a34a;
+  --input-bg: #f8faff;
+  --placeholder: #9ca3af;
+}
+
+[data-theme="ocean"] {
+  --bg:      #060d1a;
+  --surface: #0d1f35;
+  --surface2: #102540;
+  --border:  #1a3a5c;
+  --text:    #cce8ff;
+  --muted:   #5f8fbb;
+  --accent:  #00b4d8;
+  --green:   #06d6a0;
+  --red:     #ef476f;
+  --orange:  #ffd166;
+  --radius:  12px;
+  --shadow:  0 8px 40px rgba(0,0,0,0.6);
+  --grad-a:  #00b4d8;
+  --grad-b:  #06d6a0;
+  --input-bg: #0a1a2e;
+  --placeholder: #2a4a6a;
+}
+
+[data-theme="sunset"] {
+  --bg:      #1a0a0f;
+  --surface: #2a1020;
+  --surface2: #321428;
+  --border:  #5c2040;
+  --text:    #fde8d8;
+  --muted:   #b07090;
+  --accent:  #ff6b6b;
+  --green:   #ffd93d;
+  --red:     #ff4757;
+  --orange:  #ff9f43;
+  --radius:  12px;
+  --shadow:  0 8px 40px rgba(0,0,0,0.55);
+  --grad-a:  #ff6b6b;
+  --grad-b:  #ff9f43;
+  --input-bg: #200c16;
+  --placeholder: #5c2a3a;
+}
+
+[data-theme="forest"] {
+  --bg:      #0a130a;
+  --surface: #0f1f10;
+  --surface2: #162518;
+  --border:  #2a4a2c;
+  --text:    #d4edda;
+  --muted:   #6a9b72;
+  --accent:  #4caf50;
+  --green:   #81c784;
+  --red:     #ef5350;
+  --orange:  #ffa726;
+  --radius:  12px;
+  --shadow:  0 8px 40px rgba(0,0,0,0.55);
+  --grad-a:  #4caf50;
+  --grad-b:  #81c784;
+  --input-bg: #0a160b;
+  --placeholder: #2a4a2e;
+}
+
+/* ── Base ───────────────────────────────────────────────── */
+html, body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  transition: background 0.25s, color 0.25s;
+}
+
+/* ── Card ───────────────────────────────────────────────── */
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px 28px;
+  box-shadow: var(--shadow);
+  transition: background 0.25s, border-color 0.25s;
+}
+
+/* ── Logo ───────────────────────────────────────────────── */
+.auth-logo {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.logo-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+  margin-bottom: 8px;
+  background: linear-gradient(120deg, var(--grad-a), var(--grad-b));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-logo h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  background: linear-gradient(120deg, var(--grad-a), var(--grad-b));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.auth-logo p {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 3px;
+}
+
+/* ── Heading ────────────────────────────────────────────── */
+.auth-card h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+/* ── Alert ──────────────────────────────────────────────── */
+.alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+.alert.hidden  { display: none; }
+.alert-error   { background: rgba(231,76,60,0.15);  color: var(--red);   border: 1px solid rgba(231,76,60,0.3); }
+.alert-success { background: rgba(39,174,96,0.15);   color: var(--green); border: 1px solid rgba(39,174,96,0.3); }
+
+/* ── Form fields ────────────────────────────────────────── */
+.field {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.field label .hint {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.input-wrap { position: relative; }
+.input-wrap input { width: 100%; }
+
+.field input {
+  width: 100%;
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.25s;
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(61,142,248,0.15);
+}
+
+.field input::placeholder { color: var(--placeholder); }
+
+/* Password toggle */
+.toggle-pw {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 2px 4px;
+  color: var(--muted);
+}
+.toggle-pw:hover { color: var(--text); }
+
+/* Field error */
+.field-error {
+  font-size: 0.75rem;
+  color: var(--red);
+  min-height: 16px;
+}
+
+/* ── Password strength ──────────────────────────────────── */
+.pw-strength {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.strength-bar { display: flex; gap: 4px; flex: 1; }
+
+.bar-seg {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background 0.2s;
+}
+
+/* ── Submit button ──────────────────────────────────────── */
+.btn-submit {
+  width: 100%;
+  padding: 11px;
+  margin-top: 8px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: filter 0.15s, transform 0.1s;
+}
+.btn-submit:hover:not(:disabled) { filter: brightness(1.12); }
+.btn-submit:active:not(:disabled) { transform: scale(0.98); }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Spinner ────────────────────────────────────────────── */
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+.spinner.hidden { display: none; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Auth link ──────────────────────────────────────────── */
+.auth-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.auth-link a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+.auth-link a:hover { text-decoration: underline; }
+
+/* ── Theme picker (dropdown inside auth card) ───────────── */
+.theme-picker-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.theme-dropdown-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.theme-select {
+  flex: 1;
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 0.83rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.25s;
+}
+.theme-select:focus { border-color: var(--accent); }
+
+/* ── Responsive ─────────────────────────────────────────── */
+@media (max-width: 460px) {
+  .auth-card { padding: 28px 20px 22px; }
+}

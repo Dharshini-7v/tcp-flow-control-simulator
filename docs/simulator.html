@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TCP Flow-Control Simulator — Demo</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- theme.js applies data-theme before paint — no flash -->
+  <script src="theme.js"></script>
+</head>
+<body>
+  <!-- Top nav (no auth — demo mode) -->
+  <nav class="topnav">
+    <div class="topnav-brand">⧉ TCP Flow-Control Simulator</div>
+    <div class="topnav-right">
+      <div id="themePickerMount"></div>
+      <span class="demo-badge">Demo</span>
+    </div>
+  </nav>
+
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <h1>TCP Flow-Control Simulator</h1>
+      <p class="subtitle">Sliding Window &amp; Receiver-Window Management — Interactive Demo</p>
+    </header>
+
+    <!-- Controls -->
+    <section class="controls-panel">
+      <div class="control-group">
+        <label for="totalBytes">Total Data (bytes)</label>
+        <input type="number" id="totalBytes" value="3200" min="100" max="10000" step="100" />
+      </div>
+      <div class="control-group">
+        <label for="mss">MSS (bytes)</label>
+        <input type="number" id="mss" value="200" min="50" max="500" step="50" />
+      </div>
+      <div class="control-group">
+        <label for="rwnd">Receiver Buffer (bytes)</label>
+        <input type="number" id="rwnd" value="1000" min="200" max="4000" step="200" />
+      </div>
+      <div class="control-group">
+        <label for="rtt">RTT (ms)</label>
+        <input type="number" id="rtt" value="400" min="100" max="2000" step="100" />
+      </div>
+      <div class="control-group">
+        <label for="speed">Sim Speed</label>
+        <select id="speed">
+          <option value="2000">0.5×</option>
+          <option value="1000" selected>1×</option>
+          <option value="500">2×</option>
+          <option value="250">4×</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="lossMode">Loss Scenario</label>
+        <select id="lossMode">
+          <option value="none">No Loss</option>
+          <option value="single">Single Loss</option>
+          <option value="random">Random Loss</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="btn-row">
+      <button id="btnStart" class="btn btn-primary">▶ Start</button>
+      <button id="btnPause" class="btn btn-secondary" disabled>⏸ Pause</button>
+      <button id="btnStep"  class="btn btn-secondary" disabled>⏭ Step</button>
+      <button id="btnReset" class="btn btn-danger">↺ Reset</button>
+    </section>
+
+    <!-- Visualizer -->
+    <section class="viz-area">
+      <div class="panel">
+        <h2>Sender Window</h2>
+        <canvas id="senderCanvas" width="760" height="120"></canvas>
+        <div class="legend">
+          <span class="dot sent-acked"></span>Sent &amp; ACKed
+          <span class="dot sent-unacked"></span>Sent, Unacked
+          <span class="dot in-flight"></span>In-Flight
+          <span class="dot unsent-allowed"></span>Unsent (window open)
+          <span class="dot unsent-blocked"></span>Unsent (window full)
+        </div>
+      </div>
+      <div class="panel">
+        <h2>Network Pipe</h2>
+        <canvas id="pipeCanvas" width="760" height="140"></canvas>
+      </div>
+      <div class="panel">
+        <h2>Receiver Buffer <span id="rwndLabel" class="rwnd-badge"></span></h2>
+        <canvas id="receiverCanvas" width="760" height="80"></canvas>
+        <div id="bufferStats" class="buffer-stats"></div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="stats-grid">
+      <div class="stat-card"><div class="stat-value" id="statSent">—</div><div class="stat-label">Bytes Sent</div></div>
+      <div class="stat-card"><div class="stat-value" id="statAcked">—</div><div class="stat-label">Bytes ACKed</div></div>
+      <div class="stat-card"><div class="stat-value" id="statInFlight">—</div><div class="stat-label">In-Flight</div></div>
+      <div class="stat-card"><div class="stat-value" id="statRwnd">—</div><div class="stat-label">rwnd (bytes)</div></div>
+      <div class="stat-card"><div class="stat-value" id="statCwnd">—</div><div class="stat-label">cwnd (segments)</div></div>
+      <div class="stat-card"><div class="stat-value" id="statEffWindow">—</div><div class="stat-label">Effective Window</div></div>
+      <div class="stat-card"><div class="stat-value" id="statRetrans">—</div><div class="stat-label">Retransmits</div></div>
+      <div class="stat-card"><div class="stat-value" id="statUtil">—</div><div class="stat-label">Throughput</div></div>
+    </section>
+
+    <!-- Event log -->
+    <section class="panel log-panel">
+      <h2>Event Log</h2>
+      <div id="eventLog" class="event-log"></div>
+    </section>
+
+    <!-- Demo note -->
+    <section class="demo-note">
+      <p>
+        ⚡ This is a <strong>static demo</strong> — the full application with user authentication
+        is available on
+        <a href="https://github.com/Dharshini-7v/tcp-simulator" target="_blank" rel="noopener">GitHub</a>
+        and deployable via Docker / Render.
+      </p>
+    </section>
+  </div>
+
+  <script src="tcp.js"></script>
+  <script src="renderer.js"></script>
+  <script src="main.js"></script>
+  <script>
+    // Build theme picker in topnav
+    ThemeEngine.buildThemePicker('#themePickerMount', 'row');
+  </script>
+</body>
+</html>
