@@ -1,0 +1,26 @@
+# Dependencies — reinstalled inside Docker
+backend/node_modules
+node_modules
+
+# Data — use a volume in production, don't bake data into image
+backend/data/users.json
+
+# Git & IDE
+.git
+.gitignore
+.github
+.vscode
+*.md
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Docker files themselves
+Dockerfile
+.dockerignore
+docker-compose*.yml

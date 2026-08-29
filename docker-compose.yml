@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────
+# docker-compose.yml — TCP Flow-Control Simulator
+# Local development / integration testing
+#
+# Usage:
+#   docker compose up --build          # start
+#   docker compose down -v             # stop + remove volumes
+# ─────────────────────────────────────────────────────────
+
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    container_name: tcp_simulator
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: "3000"
+      NODE_ENV: "production"
+      # Override in a .env file — never commit real secrets
+      JWT_SECRET: "${JWT_SECRET:-tcp_sim_dev_secret_change_in_prod}"
+    volumes:
+      # Persist user data outside the container
+      - tcp_data:/app/backend/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  tcp_data:
+    driver: local

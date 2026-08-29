@@ -1,0 +1,127 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# GitHub Actions CI — TCP Flow-Control Simulator
+#
+# Triggers:
+#   • Every push to main / master
+#   • Every pull request targeting main / master
+#
+# Jobs:
+#   1. lint-and-test  — install deps, check syntax, run smoke tests
+#   2. docker-build   — build the Docker image to confirm it compiles cleanly
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  # ── Job 1: Install, lint, and smoke-test the backend ───────────────────────
+  lint-and-test:
+    name: Lint & Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node: ["18", "20"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm ci --omit=dev
+        working-directory: backend
+
+      - name: Check Node.js can parse all source files (syntax check)
+        run: |
+          node --check backend/server.js
+          node --check backend/routes/auth.js
+          node --check backend/middleware/auth.js
+        working-directory: .
+
+      - name: Ensure users.json data file exists
+        run: |
+          mkdir -p backend/data
+          echo "[]" > backend/data/users.json
+
+      - name: Start server in background
+        run: node backend/server.js &
+        env:
+          PORT: 3001
+          JWT_SECRET: ci_test_secret_key
+
+      - name: Wait for server to be ready
+        run: |
+          for i in {1..15}; do
+            curl -sf http://localhost:3001/ && break
+            echo "Waiting for server... ($i)"
+            sleep 1
+          done
+
+      - name: Smoke test — register a user
+        run: |
+          RESPONSE=$(curl -sf -X POST http://localhost:3001/api/auth/register \
+            -H "Content-Type: application/json" \
+            -d '{"name":"CI User","email":"ci@test.com","password":"testpass123"}')
+          echo "$RESPONSE" | grep -q '"token"' && echo "REGISTER OK" || (echo "REGISTER FAILED: $RESPONSE" && exit 1)
+
+      - name: Smoke test — login with correct credentials
+        run: |
+          RESPONSE=$(curl -sf -X POST http://localhost:3001/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci@test.com","password":"testpass123"}')
+          echo "$RESPONSE" | grep -q '"token"' && echo "LOGIN OK" || (echo "LOGIN FAILED: $RESPONSE" && exit 1)
+          echo "TOKEN=$(echo $RESPONSE | python3 -c \"import sys,json; print(json.load(sys.stdin)['token'])\")" >> $GITHUB_ENV
+
+      - name: Smoke test — wrong password returns 401
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3001/api/auth/login \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci@test.com","password":"wrongpass"}')
+          [ "$STATUS" = "401" ] && echo "WRONG PASSWORD correctly rejected" || (echo "Expected 401, got $STATUS" && exit 1)
+
+      - name: Smoke test — /me without token returns 401
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/api/auth/me)
+          [ "$STATUS" = "401" ] && echo "NO TOKEN correctly rejected" || (echo "Expected 401, got $STATUS" && exit 1)
+
+      - name: Smoke test — all frontend files served
+        run: |
+          for FILE in login.html register.html simulator.html auth.js auth.css style.css tcp.js renderer.js main.js theme.js; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/$FILE)
+            [ "$STATUS" = "200" ] && echo "$FILE -> 200 OK" || (echo "$FILE -> MISSING ($STATUS)" && exit 1)
+          done
+
+  # ── Job 2: Build Docker image ──────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (no push)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: false
+          tags: tcp-simulator:ci-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

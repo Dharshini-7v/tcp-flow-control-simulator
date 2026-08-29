@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# render.yaml — Render Infrastructure-as-Code
+# https://render.com/docs/infrastructure-as-code
+#
+# Deploy:
+#   1. Push this repo to GitHub
+#   2. Go to https://dashboard.render.com → New → Blueprint
+#   3. Connect the repo — Render reads this file automatically
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: tcp-flow-simulator
+    runtime: docker                # use our Dockerfile
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    region: oregon                 # change to: frankfurt, singapore, ohio
+    plan: free                     # free tier — upgrade for persistent disk
+
+    # ── Environment variables ───────────────────────────────────────────────
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+      - key: PORT
+        value: 3000
+
+      - key: JWT_SECRET
+        # Set this in the Render dashboard under Environment → Secret Files
+        # Never commit a real value here
+        generateValue: true        # Render auto-generates a secure random value
+
+    # ── Health check ─────────────────────────────────────────────────────────
+    healthCheckPath: /
+
+    # ── Auto-deploy on push to main ──────────────────────────────────────────
+    autoDeploy: true
+
+    # ── Persistent disk for users.json ───────────────────────────────────────
+    # NOTE: Persistent disk requires a paid plan.
+    # On the free tier, users.json resets on each deploy.
+    # Uncomment the block below when upgrading:
+    #
+    # disk:
+    #   name: tcp-simulator-data
+    #   mountPath: /app/backend/data
+    #   sizeGB: 1

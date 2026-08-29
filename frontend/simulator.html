@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TCP Flow-Control Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- theme.js MUST be first — applies data-theme before paint -->
+  <script src="theme.js"></script>
+</head>
+<body>
+  <!-- Auth guard — runs before anything else renders -->
+  <script src="auth.js"></script>
+  <script>
+    // Redirect to login if not authenticated
+    const _currentUser = AuthGuard();
+  </script>
+
+  <!-- Top navigation bar -->
+  <nav class="topnav">
+    <div class="topnav-brand">⧉ TCP Simulator</div>
+    <div class="topnav-right">
+      <!-- Theme picker injected here by theme.js -->
+      <div id="themePickerMount"></div>
+      <span class="topnav-name" id="navUserName"></span>
+      <button class="topnav-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </nav>
+  <script>
+    // Populate nav with logged-in user's name
+    const _navName = document.getElementById('navUserName');
+    if (_currentUser && _navName) _navName.textContent = _currentUser.name;
+    // Build theme picker row inside topnav
+    ThemeEngine.buildThemePicker('#themePickerMount', 'row');
+  </script>
+
+  <div id="app">
+    <!-- Header -->
+    <header>
+      <h1>TCP Flow-Control Simulator</h1>
+      <p class="subtitle">Sliding Window &amp; Receiver-Window Management</p>
+    </header>
+
+    <!-- Controls -->
+    <section class="controls-panel">
+      <div class="control-group">
+        <label for="totalBytes">Total Data (bytes)</label>
+        <input type="number" id="totalBytes" value="3200" min="100" max="10000" step="100" />
+      </div>
+      <div class="control-group">
+        <label for="mss">MSS (bytes)</label>
+        <input type="number" id="mss" value="200" min="50" max="500" step="50" />
+      </div>
+      <div class="control-group">
+        <label for="rwnd">Receiver Buffer (bytes)</label>
+        <input type="number" id="rwnd" value="1000" min="200" max="4000" step="200" />
+      </div>
+      <div class="control-group">
+        <label for="rtt">RTT (ms)</label>
+        <input type="number" id="rtt" value="400" min="100" max="2000" step="100" />
+      </div>
+      <div class="control-group">
+        <label for="speed">Sim Speed</label>
+        <select id="speed">
+          <option value="2000">0.5×</option>
+          <option value="1000" selected>1×</option>
+          <option value="500">2×</option>
+          <option value="250">4×</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label for="lossMode">Loss Scenario</label>
+        <select id="lossMode">
+          <option value="none">No Loss</option>
+          <option value="single">Single Loss</option>
+          <option value="random">Random Loss</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="btn-row">
+      <button id="btnStart" class="btn btn-primary">▶ Start</button>
+      <button id="btnPause" class="btn btn-secondary" disabled>⏸ Pause</button>
+      <button id="btnStep"  class="btn btn-secondary" disabled>⏭ Step</button>
+      <button id="btnReset" class="btn btn-danger">↺ Reset</button>
+    </section>
+
+    <!-- Main visualizer -->
+    <section class="viz-area">
+
+      <!-- Sender window diagram -->
+      <div class="panel">
+        <h2>Sender Window</h2>
+        <canvas id="senderCanvas" width="760" height="120"></canvas>
+        <div class="legend">
+          <span class="dot sent-acked"></span>Sent &amp; ACKed
+          <span class="dot sent-unacked"></span>Sent, Unacked
+          <span class="dot in-flight"></span>In-Flight
+          <span class="dot unsent-allowed"></span>Unsent (window open)
+          <span class="dot unsent-blocked"></span>Unsent (window full)
+        </div>
+      </div>
+
+      <!-- Network pipe animation -->
+      <div class="panel">
+        <h2>Network Pipe</h2>
+        <canvas id="pipeCanvas" width="760" height="140"></canvas>
+      </div>
+
+      <!-- Receiver buffer -->
+      <div class="panel">
+        <h2>Receiver Buffer  <span id="rwndLabel" class="rwnd-badge"></span></h2>
+        <canvas id="receiverCanvas" width="760" height="80"></canvas>
+        <div id="bufferStats" class="buffer-stats"></div>
+      </div>
+
+    </section>
+
+    <!-- Stats row -->
+    <section class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="statSent">0</div>
+        <div class="stat-label">Bytes Sent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statAcked">0</div>
+        <div class="stat-label">Bytes ACKed</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statInFlight">0</div>
+        <div class="stat-label">In-Flight</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statRwnd">0</div>
+        <div class="stat-label">rwnd (bytes)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statCwnd">0</div>
+        <div class="stat-label">cwnd (segments)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statEffWindow">0</div>
+        <div class="stat-label">Effective Window</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statRetrans">0</div>
+        <div class="stat-label">Retransmits</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statUtil">0%</div>
+        <div class="stat-label">Throughput</div>
+      </div>
+    </section>
+
+    <!-- Event log -->
+    <section class="panel log-panel">
+      <h2>Event Log</h2>
+      <div id="eventLog" class="event-log"></div>
+    </section>
+
+  </div>
+
+  <script src="tcp.js"></script>
+  <script src="renderer.js"></script>
+  <script src="main.js"></script>
+</body>
+</html>

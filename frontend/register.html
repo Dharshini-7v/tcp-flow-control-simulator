@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — TCP Simulator</title>
+  <link rel="stylesheet" href="auth.css" />
+  <script src="theme.js"></script>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="logo-icon">⧉</div>
+      <h1>TCP Simulator</h1>
+      <p>Flow-Control &amp; Sliding Window</p>
+    </div>
+
+    <h2>Create Account</h2>
+
+    <div id="alertBox" class="alert hidden"></div>
+
+    <form id="registerForm" novalidate>
+      <div class="field">
+        <label for="name">Full Name</label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          placeholder="Jane Doe"
+          autocomplete="name"
+          required
+        />
+        <span class="field-error" id="nameError"></span>
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          placeholder="you@example.com"
+          autocomplete="email"
+          required
+        />
+        <span class="field-error" id="emailError"></span>
+      </div>
+
+      <div class="field">
+        <label for="password">
+          Password
+          <span class="hint">min. 6 characters</span>
+        </label>
+        <div class="input-wrap">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="••••••••"
+            autocomplete="new-password"
+            required
+          />
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="Show password">👁</button>
+        </div>
+        <div class="pw-strength" id="pwStrength"></div>
+        <span class="field-error" id="passwordError"></span>
+      </div>
+
+      <div class="field">
+        <label for="confirmPassword">Confirm Password</label>
+        <input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          required
+        />
+        <span class="field-error" id="confirmError"></span>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">
+        <span id="btnText">Create Account</span>
+        <span id="btnSpinner" class="spinner hidden"></span>
+      </button>
+    </form>
+
+    <p class="auth-link">
+      Already have an account? <a href="login.html">Sign in</a>
+    </p>
+
+    <!-- Theme picker -->
+    <div id="themePickerMount"></div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    ThemeEngine.buildThemePicker('#themePickerMount', 'dropdown');
+    // If already logged in, go to simulator
+    if (localStorage.getItem('tcp_token')) {
+      window.location.href = 'simulator.html';
+    }
+
+    const form          = document.getElementById('registerForm');
+    const alertBox      = document.getElementById('alertBox');
+    const btnText       = document.getElementById('btnText');
+    const btnSpinner    = document.getElementById('btnSpinner');
+    const submitBtn     = document.getElementById('submitBtn');
+    const togglePw      = document.getElementById('togglePw');
+    const pwInput       = document.getElementById('password');
+    const pwStrengthEl  = document.getElementById('pwStrength');
+
+    // Toggle password visibility
+    togglePw.addEventListener('click', () => {
+      const show = pwInput.type === 'password';
+      pwInput.type = show ? 'text' : 'password';
+      togglePw.textContent = show ? '🙈' : '👁';
+    });
+
+    // Live password strength indicator
+    pwInput.addEventListener('input', () => {
+      const val = pwInput.value;
+      let strength = 0;
+      if (val.length >= 6)  strength++;
+      if (val.length >= 10) strength++;
+      if (/[A-Z]/.test(val)) strength++;
+      if (/[0-9]/.test(val)) strength++;
+      if (/[^A-Za-z0-9]/.test(val)) strength++;
+
+      const labels = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very Strong'];
+      const colors = ['', '#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#27ae60'];
+
+      if (!val) {
+        pwStrengthEl.innerHTML = '';
+      } else {
+        pwStrengthEl.innerHTML = `
+          <div class="strength-bar">
+            ${[1,2,3,4,5].map(i =>
+              `<div class="bar-seg ${i <= strength ? 'active' : ''}"
+                    style="${i <= strength ? `background:${colors[strength]}` : ''}"></div>`
+            ).join('')}
+          </div>
+          <span style="color:${colors[strength]};font-size:0.72rem">${labels[strength]}</span>
+        `;
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      clearErrors();
+
+      const name            = document.getElementById('name').value.trim();
+      const email           = document.getElementById('email').value.trim();
+      const password        = pwInput.value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      // Client-side validation
+      let valid = true;
+      if (!name) { showFieldError('nameError', 'Name is required.'); valid = false; }
+      if (!email) { showFieldError('emailError', 'Email is required.'); valid = false; }
+      if (!password || password.length < 6) {
+        showFieldError('passwordError', 'Password must be at least 6 characters.');
+        valid = false;
+      }
+      if (password !== confirmPassword) {
+        showFieldError('confirmError', 'Passwords do not match.');
+        valid = false;
+      }
+      if (!valid) return;
+
+      setLoading(true);
+
+      try {
+        const res  = await AuthAPI.register(name, email, password);
+        const data = await res.json();
+
+        if (!res.ok) {
+          showAlert(data.error || 'Registration failed.', 'error');
+          return;
+        }
+
+        localStorage.setItem('tcp_token', data.token);
+        localStorage.setItem('tcp_user',  JSON.stringify(data.user));
+
+        showAlert('Account created! Redirecting to simulator…', 'success');
+        setTimeout(() => { window.location.href = 'simulator.html'; }, 800);
+
+      } catch (err) {
+        showAlert('Cannot reach server. Make sure the backend is running.', 'error');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    function setLoading(on) {
+      submitBtn.disabled  = on;
+      btnText.textContent = on ? 'Creating…' : 'Create Account';
+      btnSpinner.classList.toggle('hidden', !on);
+    }
+
+    function showAlert(msg, type) {
+      alertBox.textContent = msg;
+      alertBox.className   = `alert alert-${type}`;
+    }
+
+    function showFieldError(id, msg) {
+      document.getElementById(id).textContent = msg;
+    }
+
+    function clearErrors() {
+      ['nameError','emailError','passwordError','confirmError'].forEach(id => {
+        document.getElementById(id).textContent = '';
+      });
+      alertBox.className = 'alert hidden';
+    }
+  </script>
+</body>
+</html>
